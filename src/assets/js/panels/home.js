@@ -199,7 +199,43 @@ class Home {
 
     async startGame() {
         let launch = new Launch()
+        const defaultConfigClient = {
+            account_selected: null,
+            instance_selct: null,
+            java_config: {
+                java_path: null,
+                java_memory: {
+                    min: 2,
+                    max: 4
+                }
+            },
+            game_config: {
+                screen_size: {
+                    width: 854,
+                    height: 480
+                }
+            },
+            launcher_config: {
+                download_multi: 5,
+                theme: 'auto',
+                closeLauncher: 'close-launcher',
+                intelEnabledMac: true
+            }
+        }
+
         let configClient = await this.db.readData('configClient')
+        if (!configClient) {
+            configClient = JSON.parse(JSON.stringify(defaultConfigClient))
+            await this.db.createData('configClient', configClient)
+        } else {
+            configClient.launcher_config = { ...defaultConfigClient.launcher_config, ...(configClient.launcher_config || {}) }
+            configClient.java_config = { ...defaultConfigClient.java_config, ...(configClient.java_config || {}) }
+            configClient.java_config.java_memory = { ...defaultConfigClient.java_config.java_memory, ...(configClient.java_config.java_memory || {}) }
+            configClient.game_config = { ...defaultConfigClient.game_config, ...(configClient.game_config || {}) }
+            configClient.game_config.screen_size = { ...defaultConfigClient.game_config.screen_size, ...(configClient.game_config.screen_size || {}) }
+            await this.db.updateData('configClient', configClient, configClient.ID || 1)
+        }
+        const closeLauncher = configClient.launcher_config.closeLauncher
         let instance = await config.getInstanceList()
         let authenticator = await this.db.readData('accounts', configClient.account_selected)
         let options = instance.find(i => i.name == configClient.instance_selct)
@@ -216,7 +252,7 @@ class Home {
             path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
             instance: options.name,
             version: options.loadder.minecraft_version,
-            detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
+            detached: closeLauncher == "close-all" ? false : true,
             downloadFileMultiple: configClient.launcher_config.download_multi,
             intelEnabledMac: configClient.launcher_config.intelEnabledMac,
 
@@ -293,7 +329,7 @@ class Home {
 
         launch.on('data', (e) => {
             progressBar.style.display = "none"
-            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+            if (closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-hide")
             };
             new logger('Minecraft', '#36b030');
@@ -303,7 +339,7 @@ class Home {
         })
 
         launch.on('close', code => {
-            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+            if (closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-show")
             };
             ipcRenderer.send('main-window-progress-reset')
@@ -324,7 +360,7 @@ class Home {
                 options: true
             })
 
-            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+            if (closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-show")
             };
             ipcRenderer.send('main-window-progress-reset')
