@@ -82,6 +82,8 @@ async function headplayer(skinBase64) {
     document.querySelector(".player-head").style.backgroundImage = `url(${skin})`;
 }
 
+let statusInterval = null;
+
 async function setStatus(opt) {
     let nameServerElement = document.querySelector('.server-status-name')
     let statusServerElement = document.querySelector('.server-status-text')
@@ -113,6 +115,18 @@ async function setStatus(opt) {
     }
 }
 
+async function startStatusLoop(opt, everyMs = 1000) {
+    if (!opt) return setStatus(opt);
+    if (statusInterval) clearInterval(statusInterval);
+    const ping = () => setStatus(opt);
+    await ping();              // ping immédiat
+    statusInterval = setInterval(ping, everyMs);
+}
+
+function stopStatusLoop() {
+    if (statusInterval) clearInterval(statusInterval);
+    statusInterval = null;
+}
 
 export {
     appdata as appdata,
@@ -127,5 +141,7 @@ export {
     accountSelect as accountSelect,
     slider as Slider,
     pkg as pkg,
-    setStatus as setStatus
+    setStatus as setStatus,
+    startStatusLoop,
+    stopStatusLoop
 }

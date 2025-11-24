@@ -2,7 +2,7 @@
  * @author Luuxis
  * Luuxis License v1.0 (voir fichier LICENSE pour les détails en FR/EN)
  */
-import { config, database, logger, changePanel, appdata, setStatus, pkg, popup } from '../utils.js'
+import { config, database, logger, changePanel, appdata, startStatusLoop, pkg, popup } from '../utils.js'
 
 const { Launch } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
@@ -133,12 +133,12 @@ class Home {
                         let configClient = await this.db.readData('configClient')
                         configClient.instance_selct = newInstanceSelect.name
                         instanceSelect = newInstanceSelect.name
-                        setStatus(newInstanceSelect.status)
+                        startStatusLoop(newInstanceSelect.status)
                         await this.db.updateData('configClient', configClient)
                     }
                 }
             } else console.log(`Initializing instance ${instance.name}...`)
-            if (instance.name == instanceSelect) setStatus(instance.status)
+            if (instance.name == instanceSelect) await startStatusLoop(instance.status)
         }
 
         instancePopup.addEventListener('click', async e => {
@@ -157,7 +157,7 @@ class Home {
                 instancePopup.style.display = 'none'
                 let instance = await config.getInstanceList()
                 let options = instance.find(i => i.name == configClient.instance_selct)
-                await setStatus(options.status)
+                await startStatusLoop(options.status)
             }
         })
 
